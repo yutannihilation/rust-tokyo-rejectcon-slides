@@ -123,32 +123,256 @@ WebGPU API の Rust 実装 wgpu を使うためのチュートリアル
 
 - extendr からは音楽性の違い（？）で脱退
 - savvy という別の Rust フレームワークをつくっている
-- ほかは、[mimium](https://github.com/tomoyanonymous/mimium-rs/) という音楽プログラミング言語にコントリビュートしたり
+- 最近は、[mimium](https://github.com/tomoyanonymous/mimium-rs/) という音楽プログラミング言語にコントリビュートしたり
 - 人生に迷って無職になったり
 
-# R から Rust を使う際の課題
+# R から Rust を使うには
 
-## 課題
+## R とは
+
+- R は動的プログラミング言語
+- 数値型や文字列型はすべてベクトル（配列）
+  ```{.r}
+  # ※「<-」は代入演算子
+  # xはスカラ値ではなく、長さ1のベクトル
+  x <- 1
+  ```
+- 欠損値という概念がある（後述）
+- GC がある（後述）
+
+## R のデータ表現
+
+- R のデータは、実際のデータへのポインタとメタデータが入った構造体で表される
+- この構造体には、`SEXP`（S-EXPression）という opaque pointer を介してアクセスでき、`SEXP` を引数に取る C API が用意されている
+
+## R の C API
+
+注：説明のため、欠損値や GC の考慮は省略  
+
+```{.c}
+#include <R.h>
+#include <Rinternals.h>
+
+SEXP add(SEXP a, SEXP b) {
+  SEXP result = allocVector(REALSXP, 1);
+  REAL(result)[0] = asReal(a) + asReal(b);
+
+  return result;
+}
+```
+
+## R の C API
+
+R のセッションとやり取りする変数は、すべて `SEXP` になる
+
+```{.c code-line-numbers="4"}
+#include <R.h>
+#include <Rinternals.h>
+
+SEXP add(SEXP a, SEXP b) {
+  SEXP result = allocVector(REALSXP, 1);
+  REAL(result)[0] = asReal(a) + asReal(b);
+
+  return result;
+}
+```
+
+## R の C API
+
+`allocVector()`: 指定した型の `SEXP` を作成する API。ここでは長さ 1 の実数型を作成。
+
+```{.c code-line-numbers="5"}
+#include <R.h>
+#include <Rinternals.h>
+
+SEXP add(SEXP a, SEXP b) {
+  SEXP result = allocVector(REALSXP, 1);
+  REAL(result)[0] = asReal(a) + asReal(b);
+
+  return result;
+}
+```
+
+## R の C API
+
+`REAL()`: `SEXP` に紐づいた実際のデータ（`f64` の配列）へのポインタを取り出す API
+
+```{.c code-line-numbers="6"}
+#include <R.h>
+#include <Rinternals.h>
+
+SEXP add(SEXP a, SEXP b) {
+  SEXP result = allocVector(REALSXP, 1);
+  REAL(result)[0] = asReal(a) + asReal(b);
+
+  return result;
+}
+```
+
+## R の C API
+
+`asReal()`: `SEXP` のデータを `f64` に変換する API（整数型でも実数型でも受け付けられるように）
+
+```{.c code-line-numbers="6"}
+#include <R.h>
+#include <Rinternals.h>
+
+SEXP add(SEXP a, SEXP b) {
+  SEXP result = allocVector(REALSXP, 1);
+  REAL(result)[0] = asReal(a) + asReal(b);
+
+  return result;
+}
+```
+
+## Rust から R を使う
+
+- C のヘッダファイルを元に bindgen などで Rust binding を生成する
+（よくある感じ）
+
+## R から Rust を使う
+
+1. `extern "C"` で関数を書き、それに対応する C のヘッダファイルも用意する
+2. staticlib としてビルドする
+3. R から C の関数を呼び出すためのコードを書く
+4. ビルドした staticlib をリンクして DLL をつくる
+
+# 課題
+
+## 主な難しい点
 
 - 欠損値
 - GC
 - エラー処理
 - パッケージ配布の仕組み
 
-## R のデータの表現
+## 欠損値
 
-- R は動的プログラミング言語
-- R のデータは、実際のデータへのポインタとメタデータが入った構造体で表される
-- この構造体には、`SEXP`（S-EXPression）という opaque pointer を介してアクセスでき、`SEXP` を引数に取る C API が用意されている
+R の欠損値は、Rust 側から見ると通常の値に見える。
 
-## R の C API
+* 整数型: `i32::MIN`
+* 実数型: （特別な値）
+* 文字列型: `"NA"` という文字列
+* 真偽値型: `i32::MIN`（tribool なので内部的には i32 になっている）
 
-```c
+## 欠損値
 
+* たとえば、R だと NA は伝播するが
+  ```{.r}
+  1L + NA
+  #> [1] NA
+  ```
+  Rust 側で `NA` を考慮せずそのまま足すと、 `i32::MIN + 1`（= `-2147483647`）になってしまう。
+* `R_IsNA()` など欠損値を判定する API があるので、いちいちそれを使うようにする。
+
+## GC
+
+* R は、API が呼ばれたときに、メモリが足りなければ不要なオブジェクトを GC してメモリを確保する
+* 何もしていないと使われていないと判断されてしまうので、 `PROTECT()` などの API で明示的に GC から守る必要がある
+* 関数を抜ける前には `UNPROTECT()` で protect を解除する
+
+## GC
+
+```{.c code-line-numbers="5,7"}
+#include <R.h>
+#include <Rinternals.h>
+
+SEXP add(SEXP a, SEXP b) {
+  SEXP result = PROTECT(allocVector(REALSXP, 1));
+  REAL(result)[0] = asReal(a) + asReal(b);
+  UNPROTECT(1);
+
+  return result;
+}
 ```
 
+## GC
 
-## FFI
+* `PROTECT()` をうっかり忘れると変なバグの原因になってしまうので、自動で呼び出されるようにした方がいい  
+  （例： `new()` するときに `PROTECT()` して、`impl Drop` で `UNPROTECT()` する）
 
+## エラー処理
 
+* R のエラーは **longjmp**
+* Rust が呼び出す R API の中でそれが起こると undefined behavior につながる（[ref]）
 
+いったいどうすれば...
+
+[ref]: https://github.com/rust-lang/project-ffi-unwind/blob/b3a74aa75c99cba1b455fc615117309924670d5a/faq.md#how-does-cross-language-unwinding-differ-from-cross-language-setjmplongjmp
+
+## `R_UnwindProtect()`
+
+* try-catch みたいなもの。
+* エラーが起こったときに実行されるコールバック関数を引数に取る。これを使うと、R のエラー時のフロー（longjmp）に移行する前に、リソースの開放などを行うことができる。
+
+## `R_UnwindProtect()`
+
+```c
+SEXP R_UnwindProtect(
+  // メインの処理
+  SEXP (*fun)(void *data), void *data,
+  // clean-up 用の関数
+  void (*clean)(void *data, Rboolean jump), void *cdata,
+  // 継続トークン（後述）
+  SEXP cont
+);
+```
+
+## 継続トークン
+
+- C++ の場合、その clean-up 関数から longjmp で抜け出して、あとで `R_ContinueUnwind()` で元の R のエラー処理フローに戻る、ということができる
+- トークンは、その戻るための目印
+
+## 継続トークン（例）
+
+```cpp
+SEXP res = R_UnwindProtect(
+  ...,
+  [](void* jmpbuf, Rboolean jump) {
+    if (jump == TRUE) {
+    longjmp(
+      *static_cast<std::jmp_buf*>(jmpbuf),
+      1
+    );
+    }
+  },
+  ...,
+);
+```
+
+## 継続トークン（例）
+
+longjmp した先でエラーを投げて、
+
+```cpp
+std::jmp_buf jmpbuf;
+if (setjmp(jmpbuf)) {
+  throw unwind_exception(token);
+}
+```
+
+## 継続トークン（例）
+
+それをキャッチして `R_ContinueUnwind()` にトークンを渡して R のエラー処理に戻る
+
+```cpp
+try {
+  ...
+}
+catch (cpp11::unwind_exception & e) {
+  err = e.token
+  R_ContinueUnwind(err);
+}
+```
+
+## 継続トークン
+
+* しかし、結局 Rust には longjmp はないので使えない
+
+いったいどうすれば...
+
+## 結論
+
+R の C API を呼ぶ C コードを書き Rust から呼ぶ
+
+![](./images/wrapper-c-function2.png)
