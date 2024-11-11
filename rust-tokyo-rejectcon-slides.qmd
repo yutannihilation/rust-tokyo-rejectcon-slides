@@ -32,6 +32,14 @@ Hiroaki Yutani
 - 私と Rust（なぜ R の人が Rust を触るのか、という実例として）
 - R から Rust を使う際の課題
 
+## 今日話さないこと
+
+- 私が開発している savvy については今日はほぼ話しません。興味がある方はこちらをどうぞ。
+
+**savvy入門**  
+<https://yutani.quarto.pub/intro-to-savvy-ja/>
+
+
 # 私と Rust
 
 ## 私
@@ -129,6 +137,15 @@ WebGPU API の Rust 実装 wgpu を使うためのチュートリアル
 
 ## R のデータの表現
 
+- R は動的プログラミング言語
+- R のデータは、実際のデータへのポインタとメタデータが入った構造体で表される
+- この構造体には、`SEXP`（S-EXPression）という opaque pointer を介してアクセスでき、`SEXP` を引数に取る C API が用意されている
+
+## R の C API
+
+```c
+
+```
 
 
 ## FFI
