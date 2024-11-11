@@ -1,0 +1,137 @@
+---
+title: "R から Rust を使うには"
+subtitle: "2024/11/14 Rust.Tokyo Reject con"
+author: "@yutannihilation"
+format: 
+  revealjs:
+    theme: ["solarized", "custom.scss"]
+    highlight-style: dracula
+    code-line-numbers: false
+---
+
+## ドーモ！
+
+::: columns
+::: {.column width="40%"}
+![](images/icon.jpg){fig-align="center"}
+:::
+
+::: {.column width="60%"}
+
+Hiroaki Yutani
+
+- 好きな言語：R、忍殺語
+- 趣味：家電を電子楽器に改造する団体に入っています
+- SRE  →　データサイエンティスト見習い　→　無職
+
+:::
+:::
+
+## 今日話したいこと
+
+- 私と Rust（なぜ R の人が Rust を触るのか、という実例として）
+- R から Rust を使う際の課題
+
+# 私と Rust
+
+## 私
+
+- 職業プログラマではない
+- R は趣味で覚えて多少書ける
+- コンパイル言語の経験はほぼなかった
+
+## Rust を学ぶハメになったきっかけ（2019年ごろ）
+
+::: {.incremental}
+- Processingでクリエイティブコーディングとかできるかな → ポストプロセッシングは難しいっぽい
+- openFramework は C++ で怖いし、他になんかないかな...
+- nannou というフレームワークがあるらしい
+:::
+
+## nannou
+
+Rust 製クリエイティブコーディングフレームワーク
+
+![](./images/nannou.png)
+
+
+## nannou の当初のイメージ
+
+::: {.incremental}
+- Rust **製** フレームワークなだけで、Rust をあまり知らなくても使えるだろう
+:::
+
+### 現実...
+
+::: {.incremental}
+- （絶賛開発中で機能が揃ってないこともあり）わりと Rust を書かないといけない
+- custom shader が使えないので、肝心のポストプロセッシングができない
+:::
+
+## custom shader を使いたい
+
+* nannou は対応予定があるが、ぜんぜん実装されない
+
+→　コロナ禍で暇なので、nannou が中でやってることを調べて自分でやるか...
+
+## Learn Wgpu
+
+WebGPU API の Rust 実装 wgpu を使うためのチュートリアル
+
+![](./images/learn-wgpu1.png)
+
+## Learn Wgpu
+
+著者と bot を除いていちばんコントリビュートしてる！（主にタイポ修正とかですw）
+
+![](./images/learn-wgpu2.png)
+
+## 成果
+
+![](./images/wgpu-practice.gif)
+
+## 成果
+
+![](./images/wgpu-practice2.gif)
+
+## 副産物
+
+- こういうのを Twitter に投稿していると、R 界隈に「なんかよくわからないけど Rust やってる人」として認知されることになった。
+
+![](./images/wgpu-practice.gif)
+![](./images/wgpu-practice2.gif)
+
+## 副産物
+
+- そして、ある OSS のメンテナを一緒にやってる人から「お前 Rust 詳しいんでしょ？　手伝ってよ」と呼び出される
+
+## extendr
+
+- R から Rust を使うためのフレームワーク
+
+![](./images/extendr.png)
+
+## なんやかんやあって、今
+
+- extendr からは音楽性の違い（？）で脱退
+- savvy という別の Rust フレームワークをつくっている
+- ほかは、[mimium](https://github.com/tomoyanonymous/mimium-rs/) という音楽プログラミング言語にコントリビュートしたり
+- 人生に迷って無職になったり
+
+# R から Rust を使う際の課題
+
+## 課題
+
+- 欠損値
+- GC
+- エラー処理
+- パッケージ配布の仕組み
+
+## R のデータの表現
+
+
+
+## FFI
+
+
+
