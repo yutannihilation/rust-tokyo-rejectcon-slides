@@ -19,13 +19,12 @@ $code-color: darken($presentation-heading-color, 20%);
 $code-block-font-size: 0.9em;
 $code-block-font-weight: 600;
 
-// // code line highlight はしたいが、line number は欲しくないので CSS で消す
-// .reveal pre code {
-//   margin-left: -1.5em;
-// }
-// .reveal pre code span.co {
-//   color: #a3a38fb0;
-// }
+/*-- scss:rules --*/
+
+// code line highlight はしたいが、line number は欲しくないので CSS で消す
+.reveal pre code {
+  margin-left: -1.5em;
+}
 
 .reveal h1.title,
 .reveal .slide h1,
@@ -33,4 +32,9 @@ $code-block-font-weight: 600;
 .reveal .slide h3,
 .reveal .slide h4 {
   text-transform: none;
+}
+
+span.slide-number-a {
+  font-size: 3em;
+  color: var(--r-main-color);
 }

@@ -1,0 +1,4 @@
+- source: rust-tokyo-rejectcon-slides.qmd
+  quarto-pub:
+    - id: 6249faa3-c8a4-436b-bc4a-4c0dec030860
+      url: 'https://yutani.quarto.pub/rust-tokyo-reject-2024'

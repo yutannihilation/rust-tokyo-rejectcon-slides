@@ -6,7 +6,7 @@ format:
   revealjs:
     theme: ["solarized", "custom.scss"]
     highlight-style: dracula
-    code-line-numbers: false
+    slide-number: true
 ---
 
 ## ドーモ！
@@ -34,7 +34,7 @@ Hiroaki Yutani
 
 ## 今日話さないこと
 
-- 私が開発している savvy については今日はほぼ話しません。興味がある方はこちらをどうぞ。
+- 私が開発している savvy については今日は話しません。興味がある方はこちらをどうぞ。
 
 **savvy入門**  
 <https://yutani.quarto.pub/intro-to-savvy-ja/>
@@ -86,6 +86,8 @@ Rust 製クリエイティブコーディングフレームワーク
 
 WebGPU API の Rust 実装 wgpu を使うためのチュートリアル
 
+<https://sotrh.github.io/learn-wgpu/>
+
 ![](./images/learn-wgpu1.png)
 
 ## Learn Wgpu
@@ -128,7 +130,15 @@ WebGPU API の Rust 実装 wgpu を使うためのチュートリアル
 
 # R から Rust を使うには
 
-## R とは
+## R
+
+- 統計解析向けのプログラミング言語
+- メタプログラミングがやりやすい
+- パッケージ名が「〇〇r」とかで Rust とかぶりがち
+
+![](./images/r-logo.svg)
+
+## R の特徴
 
 - R は動的プログラミング言語
 - 数値型や文字列型はすべてベクトル（配列）
@@ -239,20 +249,22 @@ SEXP add(SEXP a, SEXP b) {
 
 # 課題
 
-## 主な難しい点
+## 主な課題
 
 - 欠損値
 - GC
 - エラー処理
 - パッケージ配布の仕組み
 
+# 課題1: 欠損値
+
 ## 欠損値
 
-R の欠損値は、Rust 側から見ると通常の値に見える。
+R の欠損値は、Rust にとっては通常の値
 
 * 整数型: `i32::MIN`
-* 実数型: （特別な値）
-* 文字列型: `"NA"` という文字列
+* 実数型: R 創始者が生まれた年（？）
+* 文字列型: `"NA"` という文字列へのポインタ
 * 真偽値型: `i32::MIN`（tribool なので内部的には i32 になっている）
 
 ## 欠損値
@@ -262,8 +274,10 @@ R の欠損値は、Rust 側から見ると通常の値に見える。
   1L + NA
   #> [1] NA
   ```
-  Rust 側で `NA` を考慮せずそのまま足すと、 `i32::MIN + 1`（= `-2147483647`）になってしまう。
-* `R_IsNA()` など欠損値を判定する API があるので、いちいちそれを使うようにする。
+  Rust 側で `NA` を考慮せずそのまま足すと、 `1 + i32::MIN`（= `-2147483647`）になってしまう
+* `R_IsNA()` など欠損値を判定する API があるので、都度それを使うようにする
+
+# 課題2: GC
 
 ## GC
 
@@ -290,6 +304,8 @@ SEXP add(SEXP a, SEXP b) {
 
 * `PROTECT()` をうっかり忘れると変なバグの原因になってしまうので、自動で呼び出されるようにした方がいい  
   （例： `new()` するときに `PROTECT()` して、`impl Drop` で `UNPROTECT()` する）
+
+# 課題3: エラー処理
 
 ## エラー処理
 
@@ -376,3 +392,110 @@ catch (cpp11::unwind_exception & e) {
 R の C API を呼ぶ C コードを書き Rust から呼ぶ
 
 ![](./images/wrapper-c-function2.png)
+
+
+# 課題4: パッケージ配布の仕組み
+
+## パッケージ
+
+* Rust でいう crate、Python でいうモジュールにあたるもの
+* ユーザーは、`install.packages()` という関数でパッケージをインストールできる
+
+```r
+install.packages("パッケージ名")
+```
+
+## CRAN
+= The Comprehensive R Archive Network
+
+* R のパッケージのレジストリ
+* 人力でのレビューを通ったパッケージしか登録されていない。「comprehensive」は嘘！
+* CI によるチェックも定期的に実行されていて、エラーが出たら登録抹消になる
+* macOS・Windows にはビルド済みのパッケージを提供している
+
+## ツールチェーン
+
+* CRAN 以外のレジストリもあるが、今のところは CRAN の影響が大きい  
+→　CRAN で使われているツールチェーンでコンパイルできるかどうかが実質ボトルネックになる
+
+## ツールチェーンの課題
+
+CRAN の CI のマシン一覧
+
+![](./images/cran-flavors.png)
+
+## ツールチェーンの課題
+
+ん...？
+
+![](./images/cran-flavors2.png)
+
+## ツールチェーンの課題
+
+これは...
+
+![](./images/cran-flavors3.png)
+
+## ツールチェーンの課題
+
+<https://docs.fedoraproject.org/en-US/releases/eol/>
+![](./images/fedora-eol.png)
+
+## ツールチェーンの課題
+
+* すでに EOL を迎えている Fedora 36 が動き続けていて、その Rust のバージョン（1.69）でコンパイルできる必要がある
+* （余談）過去にはここにさらに Solaris が並んでいて、「どうやってテストしろと？？」と多くのヘイトを集めていた
+
+## CRAN の制限
+
+* ビルド時にソースコードをダウンロードするのは禁止  
+→　すべてを `cargo vendor` する必要がある
+* 加えて、パッケージサイズの制限もあり、依存関係が重いものはリジェクトされる
+  * Rust は、Cargo が便利すぎて依存関係が膨れ上がりがち
+
+## なぜ？
+
+* （私見） R は GNU だから
+   * 最近のライセンスゆるめの言語と違ってチェックが厳しくなるのもまあわかる
+   * とはいえ、GNU Emacs にも MELPA があるわけで、ゆるい運用の場所は作れるはず
+* Fedora の件は謎
+
+## Rust はまだ CRAN には早すぎる
+
+* 新しめのツールチェーンが要求されがち
+* Cargo が便利すぎて依存関係が膨れ上がりがち
+
+## （参考）R-universe
+
+https://r-universe.dev/
+
+![](./images/r-universe.png)
+
+## （参考）R-universe
+
+* GitHub ベースで、誰でも自由にパッケージを公開できるレジストリ
+* CRAN と同じく、macOS・Windows にはビルド済みパッケージが提供される
+
+→　パッケージを配布したいだけなら CRAN を使う必要はもうない
+
+# Rust を使った R パッケージの例
+
+## 例
+
+* [polars](https://github.com/pola-rs/r-polars): Python の Polars の R 版
+* [prqlr](https://github.com/PRQL/prqlc-r): prql（SQL にトランスパイルできる言語）の R binding
+* [arcpbf](https://r.esri.com/arcpbf/): ArcGIS の REST API を使う
+* [string2path](https://github.com/yutannihilation/string2path/): フォントをアウトライン化する
+
+## 感想
+
+* 今のところ、「Python もあるなら R でもつくるか」という程度のものがほとんど
+  * まあこれも、C++ のライブラリだとビルドの難易度が高くてできなかったケースは多く、Rust のおかげではある
+* キラーアプリ的なものが欲しいところ
+
+# まとめ
+
+## まとめ
+
+* （他の言語と同じく）R には R 固有の仕組みがあって、Rust を使うときにはいくつかのポイントで工夫が必要
+* 加えて、R に固有の事情として、公式のパッケージレジストリが使いづらいのでいろいろ苦労する
