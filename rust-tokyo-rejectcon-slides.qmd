@@ -34,7 +34,7 @@ Hiroaki Yutani
 
 ## 今日話さないこと
 
-- 私が開発している savvy については今日は話しません。興味がある方はこちらをどうぞ。
+- 私が開発しているフレームワーク savvy については今日は話しません（R の話になってしまうので...）。興味がある方は以下のスライドをどうぞ。
 
 **savvy入門**  
 <https://yutani.quarto.pub/intro-to-savvy-ja/>
@@ -113,7 +113,7 @@ WebGPU API の Rust 実装 wgpu を使うためのチュートリアル
 
 ## 副産物
 
-- そして、ある OSS のメンテナを一緒にやってる人から「お前 Rust 詳しいんでしょ？　手伝ってよ」と呼び出される
+- そして、とある R の OSS のメンテナを一緒にやってる人から「お前 Rust 詳しいんでしょ？　手伝ってよ」と突然呼び出されて巻き込まれる
 
 ## extendr
 
@@ -134,7 +134,7 @@ WebGPU API の Rust 実装 wgpu を使うためのチュートリアル
 
 - 統計解析向けのプログラミング言語
 - メタプログラミングがやりやすい
-- パッケージ名が「〇〇r」とかで Rust とかぶりがち
+- 「〇〇r」みたいなパッケージ名が多く、Rust や Ruby とかぶりがち
 
 ![](./images/r-logo.svg)
 
@@ -237,12 +237,11 @@ SEXP add(SEXP a, SEXP b) {
 
 ## Rust から R を使う
 
-- C のヘッダファイルを元に bindgen などで Rust binding を生成する
-（よくある感じ）
+- C のヘッダファイルを元に bindgen などで Rust のバインディングを生成する
 
 ## R から Rust を使う
 
-1. `extern "C"` で関数を書き、それに対応する C のヘッダファイルも用意する
+1. `extern "C"` で C ABI の関数を書き、それに対応する C のヘッダファイルも用意する
 2. staticlib としてビルドする
 3. R から C の関数を呼び出すためのコードを書く
 4. ビルドした staticlib をリンクして DLL をつくる
@@ -467,7 +466,7 @@ CRAN の CI のマシン一覧
 
 ## （参考）R-universe
 
-https://r-universe.dev/
+<https://r-universe.dev/>
 
 ![](./images/r-universe.png)
 
@@ -478,24 +477,42 @@ https://r-universe.dev/
 
 →　パッケージを配布したいだけなら CRAN を使う必要はもうない
 
-# Rust を使った R パッケージの例
+## まとめ
 
-## 例
+* R には C API があるので、FFI を介して Rust を使うことは当然できる
+* しかし、技術的な困難はあるし、それに加えて非技術的な困難もある
+
+# そこまでして Rust を使う意味とは？
+
+## 個人的な結論
+
+::: {.incremental}
+- ない
+:::
+
+## ユースケース別に考えてみる
+
+* 既存のライブラリの軽量なバインディング  
+→　主要な用途はだいたい C/C++ のライブラリでカバーされているので、C/C++ で書けばいい
+
+* ゼロから実装  
+→　~~たぶん多くの人に使ってもらうのが目的なので、R より Python 化した方がいい~~
+
+## まあ、とはいえ...
+
+* 将来的には Rust にしかないライブラリも増えてきそう
+* （自分のように）C++ は書けないけど Rust なら書ける、という人も増えてきそう
+* Rust で実装した Python モジュールが増えてきて、これの R 版も欲しい、というケースはそこそこある気がする
+
+## Rust を使った R パッケージの例
 
 * [polars](https://github.com/pola-rs/r-polars): Python の Polars の R 版
 * [prqlr](https://github.com/PRQL/prqlc-r): prql（SQL にトランスパイルできる言語）の R binding
 * [arcpbf](https://r.esri.com/arcpbf/): ArcGIS の REST API を使う
 * [string2path](https://github.com/yutannihilation/string2path/): フォントをアウトライン化する
 
-## 感想
+# 
 
-* 今のところ、「Python もあるなら R でもつくるか」という程度のものがほとんど
-  * まあこれも、C++ のライブラリだとビルドの難易度が高くてできなかったケースは多く、Rust のおかげではある
-* キラーアプリ的なものが欲しいところ
-
-# まとめ
-
-## まとめ
-
-* （他の言語と同じく）R には R 固有の仕組みがあって、Rust を使うときにはいくつかのポイントで工夫が必要
-* 加えて、R に固有の事情として、公式のパッケージレジストリが使いづらいのでいろいろ苦労する
+:::{#title-slide .center}
+Enjoy!
+:::
