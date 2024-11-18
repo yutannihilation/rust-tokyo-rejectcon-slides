@@ -7,7 +7,25 @@ format:
     theme: ["solarized", "custom.scss"]
     highlight-style: dracula
     slide-number: true
+    include-in-header: 
+      text: |
+        <meta name="twitter:title" content="R から Rust を使うには"/>
+        <meta name="twitter:description" content="Rust.Tokyo Reject con での発表スライドです。"/>
+        <meta name="twitter:url" content="https://yutani.quarto.pub/rust-tokyo-reject-2024/"/>
+        <meta name="twitter:image" content="https://yutani.quarto.pub/rust-tokyo-reject-2024/images/thumbnail.png"/>
+        <meta name="twitter:image:alt" content="Rust.Tokyo Reject con での発表スライドです。"/>
+        <meta name="twitter:card" content="summary_large_image"/>
+        <meta property="og:title" content="R から Rust を使うには"/>
+        <meta property="og:description" content="Rust.Tokyo Reject con での発表スライドです。"/>
+        <meta property="og:url" content="https://yutani.quarto.pub/rust-tokyo-reject-2024/"/>
+        <meta property="og:image" content="https://yutani.quarto.pub/rust-tokyo-reject-2024/images/thumbnail.png"/>
+        <meta property="og:image:alt" content="Rust.Tokyo Reject con での発表スライドです。"/>
+        <meta property="og:type" content="website"/>
 ---
+
+## サムネイル画像用 {visibility="hidden"}
+
+![](images/thumbnail.png)
 
 ## ドーモ！
 
